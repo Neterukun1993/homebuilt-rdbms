@@ -8,7 +8,7 @@ def empty_buffer_pool_manager(tmp_path):
     file_path = tmp_path / "test.txt"
     disk = DiskManager(file_path)
     pool = BufferPool(1)
-    bufmgr = BufferPoolManager(disk, pool) 
+    bufmgr = BufferPoolManager(disk, pool)
     return bufmgr
 
 
@@ -16,8 +16,8 @@ class TestBuffer:
 
     def test_create_buffer(self):
         empty_buffer = Buffer()
-        assert empty_buffer.page_id.to_int() == 0
-        assert empty_buffer.page == bytearray(PAGE_SIZE) 
+        assert empty_buffer.page_id.to_int() == -1
+        assert empty_buffer.page == bytearray(PAGE_SIZE)
         assert empty_buffer.is_dirty == False
 
 
@@ -40,13 +40,11 @@ class TestBufferPool:
         assert buffer_pool.next_victim_id == 0
 
 
-
 class TestBufferPoolManager:
     hello: bytearray = bytearray(PAGE_SIZE)
     world: bytearray = bytearray(PAGE_SIZE)
     hello[0:len("hello")] = map(ord, "hello")
     world[0:len("world")] = map(ord, "world")
-   
 
     def test_io(self, empty_buffer_pool_manager):
         bufmgr = empty_buffer_pool_manager
@@ -62,8 +60,12 @@ class TestBufferPoolManager:
 
         buffer_ = bufmgr.create_page()
         buffer_.page = self.world
-        buffer_is_dirty = True
+        buffer_.is_dirty = True
         world_id = buffer_.page_id
+
+        buffer_ = bufmgr.fetch_page(world_id)
+        page = buffer_.page
+        assert(self.world == page)
 
         buffer_ = bufmgr.fetch_page(hello_id)
         page = buffer_.page
@@ -71,4 +73,22 @@ class TestBufferPoolManager:
 
         buffer_ = bufmgr.fetch_page(world_id)
         page = buffer_.page
-        assert(self.world == page) 
+        assert(self.world == page)
+
+    def test_flush_memory_data_to_disk(self, empty_buffer_pool_manager):
+        bufmgr = empty_buffer_pool_manager
+
+        buffer_ = bufmgr.create_page()
+        buffer_.page = self.hello
+        buffer_.is_dirty = True
+        hello_id = buffer_.page_id
+
+        bufmgr.flush()
+
+        disk = bufmgr.disk
+        new_pool = BufferPool(1)
+        new_bufmgr = BufferPoolManager(disk, new_pool)
+
+        buffer_ = new_bufmgr.fetch_page(hello_id)
+        page = buffer_.page
+        assert(self.hello == page)
