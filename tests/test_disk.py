@@ -11,6 +11,13 @@ class TestPage:
     def test_page_size(self):
         assert PAGE_SIZE == 4096
 
+    def test_compare_two_page_id(self):
+        page_id = PageID(10)
+        same_page_id = PageID(10)
+        diff_page_id = PageID(20)
+        assert page_id == same_page_id
+        assert page_id != diff_page_id
+
 
 @pytest.fixture
 def empty_disk(tmp_path):

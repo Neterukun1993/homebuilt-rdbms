@@ -11,6 +11,14 @@ class PageID:
     def __init__(self, page_id: int) -> None:
         self.page_id = page_id
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, PageID):
+            return False
+        return self.page_id == other.page_id
+
+    def __hash__(self) -> int:
+        return hash(self.page_id)
+
     def to_int(self) -> int:
         return self.page_id
 
@@ -37,7 +45,7 @@ class DiskManager:
         self.heap_file.seek(offset)
         self.heap_file.write(data)
 
-    def read_page_data(self, page_id: PageID) -> bytes:
+    def read_page_data(self, page_id: PageID) -> bytearray:
         offset = PAGE_SIZE * page_id.to_int()
         self.heap_file.seek(offset)
-        return self.heap_file.read(PAGE_SIZE)
+        return bytearray(self.heap_file.read(PAGE_SIZE))
